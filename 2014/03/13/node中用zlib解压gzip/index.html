@@ -11,7 +11,11 @@
 <meta name="og:image">
 <meta name="og:site_name" content="wyicwx的个人blog">
 <meta name="og:description" content="为了减少网络传输数据量，http传输过程中会采用通用的压缩算法来压缩数据，gzip属于最常用的压缩算法。
+<<<<<<< HEAD
 使用node的http模块发送请求时并没有帮我们进行解压，因此我们需要手动去判断gzip。
+=======
+在node中http模块并没有帮我们进行解压，我们需要手动去判断gzip。
+>>>>>>> 5f46f7703620adcc88be307f049457aa82c38a57
 1
 2
 3
@@ -29,7 +33,12 @@
 15
 var http = require('http');
 var options = {
+<<<<<<< HEAD
 	hostname: 'www.qq.co">
+=======
+	hostname: 'www.qq.com',
+	por">
+>>>>>>> 5f46f7703620adcc88be307f049457aa82c38a57
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="wyicwx的个人blog" type="application/atom+xml">
@@ -99,7 +108,11 @@ var options = {
     <div class="article-entry" itemprop="articleBody">
       
         <p>为了减少网络传输数据量，http传输过程中会采用通用的压缩算法来压缩数据，gzip属于最常用的压缩算法。</p>
+<<<<<<< HEAD
 <p>使用node的http模块发送请求时并没有帮我们进行解压，因此我们需要手动去判断gzip。</p>
+=======
+<p>在node中http模块并没有帮我们进行解压，我们需要手动去判断gzip。</p>
+>>>>>>> 5f46f7703620adcc88be307f049457aa82c38a57
 <figure class="highlight"><table><tr><td class="gutter"><pre>1
 2
 3
@@ -170,6 +183,7 @@ http.request(options, handler);
 }
 </pre></td></tr></table></figure>
 
+<<<<<<< HEAD
 <p>若是要让服务端支持gzip压缩可以先判断请求头的accept-encoding是否含有gzip</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre>1
 2
@@ -226,11 +240,17 @@ http.createServer(<span class="function"><span class="keyword">function</span><s
 
 <p>通过zlib可以实现客户端和服务端对gzip的压缩和解压</p>
 <p>在express中提供了compress的中间件用来处理gzip</p>
+=======
+>>>>>>> 5f46f7703620adcc88be307f049457aa82c38a57
 
       
     </div>
     <footer class="article-footer">
+<<<<<<< HEAD
       <a data-url="http://wyicwx.github.com/2014/03/13/node中用zlib解压gzip/" data-id="bv7w643ss069mmzc" class="article-share-link">Share</a>
+=======
+      <a data-url="http://wyicwx.github.com/2014/03/13/node中用zlib解压gzip/" data-id="sely7ye3e1qaeviw" class="article-share-link">Share</a>
+>>>>>>> 5f46f7703620adcc88be307f049457aa82c38a57
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/nodejs/">nodejs</a></li></ul>
