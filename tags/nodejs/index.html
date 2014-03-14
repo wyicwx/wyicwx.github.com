@@ -59,6 +59,172 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-node中用zlib解压gzip" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/03/13/node中用zlib解压gzip/" class="article-date">
+  <time datetime="2014-03-13T10:15:27.000Z" itemprop="datePublished">Mar 13 2014</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/03/13/node中用zlib解压gzip/">nodejs中用zlib解压gzip</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>为了减少网络传输数据量，http传输过程中会采用通用的压缩算法来压缩数据，gzip属于最常用的压缩算法。</p>
+<p>使用node的http模块发送请求时并没有帮我们进行解压，因此我们需要手动去判断gzip。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);
+<span class="keyword">var</span> options = {
+	hostname: <span class="string">'www.qq.com'</span>,
+	port: <span class="number">80</span>,
+	method: <span class="string">'get'</span>,
+	headers: {
+		<span class="string">'Accept-Encoding'</span>: <span class="string">'gzip'</span>
+	}
+}
+
+http.request(options, handler);
+
+<span class="function"><span class="keyword">function</span> <span class="title">handler</span><span class="params">(responder)</span> {</span>
+	<span class="comment">// do something</span>
+}
+</pre></td></tr></table></figure>
+
+<p>我们设置http头Accept-Encoding为gzip告诉服务器我们支持gzip压缩，服务器收到请求后，返回responder头中content-encoding带有gzip表明返回的数据为gzip压缩过的内容，node中可以通过responder.headers[&#39;content-encoding&#39;]来判断服务器返回内容是否gzip压缩过。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">handler</span><span class="params">(responder)</span> {</span>
+	<span class="keyword">if</span>(responder.headers[<span class="string">'content-encoding'</span>].indexOf(<span class="string">'gzip'</span>) != -<span class="number">1</span>) {
+		<span class="comment">// 解压gzip</span>
+	}
+}
+</pre></td></tr></table></figure>
+
+<p>已经可以判断服务器返回的是gzip压缩过的内容，接下来我们需要去解压，幸好node提供了zlib模块。</p>
+<p>我们用zlib模块来解压gzip</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="keyword">var</span> zlib = <span class="built_in">require</span>(<span class="string">'zlib'</span>);
+<span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);
+<span class="keyword">var</span> gunzipStream = zlib.createGunzip();
+<span class="keyword">var</span> toWrite = fs.createWriteStream(<span class="string">'qq.html'</span>);
+</pre></td></tr></table></figure>
+
+<p>zlib.createGunzip是一个transform流，通过pipe我们可以很方便解压gzip</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">handler</span><span class="params">(responder)</span> {</span>
+	<span class="keyword">if</span>(<span class="transposed_variable">responder.</span>headers<span class="matrix">[<span class="string">'content-encoding'</span>].</span>indexOf(<span class="string">'gzip'</span>) != -<span class="number">1</span>) <span class="cell">{
+		responder.pipe(gunzipStream).pipe(toWrite);
+	}</span>
+}
+</pre></td></tr></table></figure>
+
+<p>若是要让服务端支持gzip压缩可以先判断请求头的accept-encoding是否含有gzip</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre></td><td class="code"><pre><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);
+<span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);
+<span class="keyword">var</span> zlib = <span class="built_in">require</span>(<span class="string">'zlib'</span>);
+
+http.createServer(<span class="function"><span class="keyword">function</span><span class="params">(req, res)</span> {</span>
+	<span class="keyword">var</span> file = fs.createReadStream(<span class="string">'./qq.html'</span>);
+	<span class="keyword">var</span> acceptEncoding = req.headers[<span class="string">'accept-encoding'</span>];
+	<span class="keyword">if</span>(acceptEncoding && acceptEncoding.indexOf(<span class="string">'gzip'</span>) != -<span class="number">1</span>) {
+		<span class="keyword">var</span> gzipStream = zlib.createGzip();
+		<span class="comment">// 设置返回头content-encoding为gzip</span>
+		res.writeHead(<span class="number">200</span>, {
+			<span class="string">"content-encoding"</span>: <span class="string">"gzip"</span>
+		});
+		file.pipe(gzipStream).pipe(res);
+	} <span class="keyword">else</span> {
+		res.writeHead(<span class="number">200</span>);
+		<span class="comment">// 不压缩</span>
+		file.pipe(res);
+	}
+}).listen(<span class="number">8080</span>);
+</pre></td></tr></table></figure>
+
+<p>使用curl测试一下</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre># 不带有<span class="tag">Accept-Encoding</span><span class="pseudo">:gzip</span> 返回正常文本
+<span class="tag">curl</span> <span class="tag">localhost</span><span class="pseudo">:8080</span>
+# 带<span class="tag">Accept-Encoding</span><span class="pseudo">:gzip</span> 返回压缩过的文件
+<span class="tag">curl</span> <span class="tag">-H</span> "<span class="tag">Accept-Encoding</span><span class="pseudo">:gzip"</span> <span class="tag">localhost</span><span class="pseudo">:8080</span>
+</pre></td></tr></table></figure>
+
+<p>通过zlib可以实现客户端和服务端对gzip的压缩和解压</p>
+<p>在express中提供了compress的中间件用来处理gzip</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://wyicwx.github.com/2014/03/13/node中用zlib解压gzip/" data-id="bv7w643ss069mmzc" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/nodejs/">nodejs</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-谈谈nodejs中httpagent" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/03/12/谈谈nodejs中httpagent/" class="article-date">
@@ -221,7 +387,7 @@ http.request(option, <span class="function"><span class="keyword">function</span
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://wyicwx.github.com/2014/03/12/谈谈nodejs中httpagent/" data-id="9410hy5wrrz148xr" class="article-share-link">Share</a>
+      <a data-url="http://wyicwx.github.com/2014/03/12/谈谈nodejs中httpagent/" data-id="e5gs3w9sib1h1z4y" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/http/">http</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/nodejs/">nodejs</a></li></ul>
@@ -244,7 +410,7 @@ http.request(option, <span class="function"><span class="keyword">function</span
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/http/">http</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/nodejs/">nodejs</a><span class="tag-list-count">1</span></li></ul>
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/http/">http</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/nodejs/">nodejs</a><span class="tag-list-count">2</span></li></ul>
     </div>
   </div>
 
@@ -253,7 +419,7 @@ http.request(option, <span class="function"><span class="keyword">function</span
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/http/" style="font-size: NaNpx;">http</a><a href="/tags/nodejs/" style="font-size: NaNpx;">nodejs</a>
+      <a href="/tags/http/" style="font-size: 10.00px;">http</a><a href="/tags/nodejs/" style="font-size: 20.00px;">nodejs</a>
     </div>
   </div>
 
@@ -262,7 +428,7 @@ http.request(option, <span class="function"><span class="keyword">function</span
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/03">March 2014</a><span class="archive-list-count">1</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/03">March 2014</a><span class="archive-list-count">2</span></li></ul>
     </div>
   </div>
 
@@ -272,6 +438,10 @@ http.request(option, <span class="function"><span class="keyword">function</span
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2014/03/13/node中用zlib解压gzip/">nodejs中用zlib解压gzip</a>
+          </li>
         
           <li>
             <a href="/2014/03/12/谈谈nodejs中httpagent/">谈谈nodejs中http.Agent</a>

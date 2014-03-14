@@ -3,14 +3,33 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Archives | wyicwx的个人blog</title>
+  <title>nodejs中用zlib解压gzip | wyicwx的个人blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="og:type" content="blog">
-<meta name="og:title">
-<meta name="og:url" content="http://wyicwx.github.com/archives/">
+<meta name="og:title" content="nodejs中用zlib解压gzip">
+<meta name="og:url" content="http://wyicwx.github.com/2014/03/13/node中用zlib解压gzip/">
 <meta name="og:image">
 <meta name="og:site_name" content="wyicwx的个人blog">
-<meta name="og:description">
+<meta name="og:description" content="为了减少网络传输数据量，http传输过程中会采用通用的压缩算法来压缩数据，gzip属于最常用的压缩算法。
+使用node的http模块发送请求时并没有帮我们进行解压，因此我们需要手动去判断gzip。
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+var http = require('http');
+var options = {
+	hostname: 'www.qq.co">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="wyicwx的个人blog" type="application/atom+xml">
@@ -57,9 +76,7 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-node中用zlib解压gzip" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-node中用zlib解压gzip" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/03/13/node中用zlib解压gzip/" class="article-date">
   <time datetime="2014-03-13T10:15:27.000Z" itemprop="datePublished">Mar 13 2014</time>
@@ -72,8 +89,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/03/13/node中用zlib解压gzip/">nodejs中用zlib解压gzip</a>
+    <h1 class="article-title" itemprop="name">
+      nodejs中用zlib解压gzip
     </h1>
   
 
@@ -221,185 +238,20 @@ http.createServer(<span class="function"><span class="keyword">function</span><s
     </footer>
   </div>
   
-</article>
-
-
+    
+<nav id="article-nav">
   
-    <article id="post-谈谈nodejs中httpagent" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/03/12/谈谈nodejs中httpagent/" class="article-date">
-  <time datetime="2014-03-12T15:13:21.000Z" itemprop="datePublished">Mar 12 2014</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/03/12/谈谈nodejs中httpagent/">谈谈nodejs中http.Agent</a>
-    </h1>
+    <a href="/2014/03/12/谈谈nodejs中httpagent/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">谈谈nodejs中http.Agent</div>
+    </a>
   
+</nav>
 
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>http协议使用“你问-我答”的方式来传输数据，即客户端通过发送请求到服务端，服务端响应请求来完成交互。对每次交互都要经过”建立-传输-销毁“的过程，为了减少建立/销毁连接的开销，http提供了keep-alive模式，即“持久连接”对已经创建的连接可以重复使用，在浏览器中维护这些tcp连接是浏览器的行为我们不需要关心，但在服务端这些tcp连接需要我们自己去维护，还好node提供了http.Agent来帮我们维护.</p>
-<p>node中通过http.Agent来管理这些可复用的连接，我们可以创建一个http.Agent实例</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre>1
-</pre></td><td class="code"><pre><span class="keyword">var</span> agent = <span class="keyword">new</span> http.Agent();
-</pre></td></tr></table></figure>
-
-<p>http.globalAgent是node默认创建的一个Agent实例，对http请求没有指定agent情况下，默认使用这个实例.</p>
-<p>我们看看agent代理内部是如何管理tcp链接的。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre>1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-</pre></td><td class="code"><pre>Agent.prototype.addRequest = <span class="function"><span class="keyword">function</span><span class="params">(req, host, port, localAddress)</span> {</span>
-  <span class="keyword">var</span> name = host + <span class="string">':'</span> + port;
-  <span class="keyword">if</span> (localAddress) {
-    name += <span class="string">':'</span> + localAddress;
-  }
-  <span class="keyword">if</span> (!<span class="keyword">this</span>.sockets[name]) {
-    <span class="keyword">this</span>.sockets[name] = [];
-  }
-  <span class="keyword">if</span> (<span class="keyword">this</span>.sockets[name].length &lt; <span class="keyword">this</span>.maxSockets) {
-    <span class="comment">// If we are under maxSockets create a new one.</span>
-    req.onSocket(<span class="keyword">this</span>.createSocket(name, host, port, localAddress, req));
-  } <span class="keyword">else</span> {
-    <span class="comment">// We are over limit so we'll add it to the queue.</span>
-    <span class="keyword">if</span> (!<span class="keyword">this</span>.requests[name]) {
-      <span class="keyword">this</span>.requests[name] = [];
-    }
-    <span class="keyword">this</span>.requests[name].push(req);
-  }
-};
-</pre></td></tr></table></figure>
-
-<p>agent通过将host、port和localAddress作为key用一个数组来存储可以复用的socket，</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre>1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-</pre></td><td class="code"><pre>  <span class="keyword">self</span>.on(<span class="string">'free'</span>, <span class="function"><span class="keyword">function</span><span class="params">(socket, host, port, localAddress)</span> {</span>
-    <span class="keyword">var</span> name = host + <span class="string">':'</span> + port;
-    <span class="keyword">if</span> (localAddress) {
-      name += <span class="string">':'</span> + localAddress;
-    }
-
-    <span class="keyword">if</span> (!socket.destroyed &&
-        <span class="keyword">self</span>.requests[name] && <span class="keyword">self</span>.requests[name].length) {
-      <span class="keyword">self</span>.requests[name].shift().onSocket(socket);
-      <span class="keyword">if</span> (<span class="keyword">self</span>.requests[name].length === <span class="number">0</span>) {
-        <span class="comment">// don't leak</span>
-        delete <span class="keyword">self</span>.requests[name];
-      }
-    } <span class="keyword">else</span> {
-      <span class="comment">// If there are no pending requests just destroy the</span>
-      <span class="comment">// socket and it will get removed from the pool. This</span>
-      <span class="comment">// gets us out of timeout issues and allows us to</span>
-      <span class="comment">// default to Connection:keep-alive.</span>
-      socket.destroy();
-    }
-  });
-</pre></td></tr></table></figure>
-
-<p>当socket完成一次请求后触发free事件，从request队列中进行下一次的请求，因此可以实现。</p>
-<p>maxSockets：agent限制了对某个地址的最大请求数目，可以理解为浏览器限制对同一个域名端口的最大并发数.</p>
-<p>为什么要进行限制呢？因为在linux平台上，操作系统为每个tcp连接都要创建一个socket句柄，而每个socket句柄同时也是个文件句柄，而操作系统对单一进程限制了最大可打开文件数量，通过ulimit -n命令可以查看当前操作系统限制创建文件数量，也可以用来设置最大可打开文件数。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre>1
-2
-</pre></td><td class="code"><pre><span class="preprocessor">#设置单进程最大可打开文件数为256</span>
-ulimit -n <span class="number">256</span>
-</pre></td></tr></table></figure>
-
-<p>因此对一个线程可以创建的tcp连接有限，设置maxSockets做成防止对同一地址端口发出请求过大，我们可以通过修改maxSockets来设置最大连接数量.</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre>1
-</pre></td><td class="code"><pre><span class="keyword">http</span>.globalAgent.maxSockets = <span class="number">10</span>;<span class="comment"> //设置最大同时请求数目为10个</span>
-</pre></td></tr></table></figure>
-
-<p>http.Agent.defaultMaxSockets定义了默认的最大连接数为5。</p>
-<p>默认情况下，http使用http.globalAgent来管理这些连接，我们可以通过传入agent参数来指定我们自己的agent。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre>1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-</pre></td><td class="code"><pre><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">'http'</span>);
-<span class="keyword">var</span> agent = <span class="keyword">new</span> http.Agent();
-<span class="keyword">var</span> option = {
-	hostname: <span class="string">'www.qq.com'</span>,
-	port: <span class="number">80</span>,
-	method: <span class="string">'get'</span>,
-	path: <span class="string">'/'</span>,
-	agent: agent
-}
-http.request(option, <span class="function"><span class="keyword">function</span><span class="params">(res)</span> {</span>
-	<span class="comment">// do something</span>
-});
-</pre></td></tr></table></figure>
-
-<p>也可以传agent为false来取消这个http请求的keep-alive的行为。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://wyicwx.github.com/2014/03/12/谈谈nodejs中httpagent/" data-id="e5gs3w9sib1h1z4y" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/http/">http</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/nodejs/">nodejs</a></li></ul>
-
-    </footer>
-  </div>
   
 </article>
 
-
-  
-  
 </section>
         
           <aside id="sidebar">
